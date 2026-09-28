@@ -40,7 +40,8 @@ def test_repo_scaffolding():
     with (ROOT / "data" / "snippets.csv").open(newline="", encoding="utf-8") as fh:
         rows = list(csv.reader(fh))
     assert rows == [
-        ["path", "folder", "moods", "duration_sec", "width", "height", "last_used"]
+        ["path", "folder", "moods", "duration_sec", "width", "height",
+         "nasa_id", "credit", "faces", "logo_risk", "last_used"]
     ]
 
     # Secrets and generated data stay out of git.
