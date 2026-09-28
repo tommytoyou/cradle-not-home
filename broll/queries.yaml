@@ -1,0 +1,32 @@
+queries:
+  - {q: "SLS launch", folder: 01_launch, moods: [commitment, ignition]}
+  - {q: "Falcon 9 launch Kennedy", folder: 01_launch, moods: [commitment]}
+  - {q: "Space Shuttle launch", folder: 01_launch, moods: [heritage]}
+  - {q: "RS-25 engine test", folder: 01_launch, moods: [pressure]}
+  - {q: "Artemis launch", folder: 01_launch, moods: [future]}
+  - {q: "rocket staging separation", folder: 02_ascent, moods: [pressure, leaving]}
+  - {q: "solid rocket booster separation", folder: 02_ascent, moods: [leaving]}
+  - {q: "stage separation", folder: 03_stage_sep, moods: [leaving]}
+  - {q: "payload fairing", folder: 03_stage_sep, moods: [reveal]}
+  - {q: "cupola", folder: 04_orbit_earth, moods: [perspective, awe]}
+  - {q: "Earth from ISS", folder: 04_orbit_earth, moods: [perspective]}
+  - {q: "aurora ISS", folder: 04_orbit_earth, moods: [awe]}
+  - {q: "spacewalk HD", folder: 05_eva, moods: [isolation, work]}
+  - {q: "EVA ISS", folder: 05_eva, moods: [work]}
+  - {q: "extravehicular activity", folder: 05_eva, moods: [work]}
+  - {q: "ISS interior module", folder: 06_interior, moods: [grind]}
+  - {q: "astronaut exercise ISS", folder: 06_interior, moods: [discipline]}
+  - {q: "Perseverance rover drive", folder: 07_mars, moods: [destination]}
+  - {q: "Ingenuity helicopter Mars", folder: 07_mars, moods: [first]}
+  - {q: "Curiosity rover landscape", folder: 07_mars, moods: [scale]}
+  - {q: "James Webb Space Telescope", folder: 08_deep, moods: [scale]}
+  - {q: "Saturn Cassini", folder: 08_deep, moods: [beauty]}
+  - {q: "Launch Control Center firing room", folder: 09_control, moods: [systems]}
+  - {q: "mission control Houston", folder: 09_control, moods: [heritage]}
+  - {q: "pad abort test", folder: 10_failure_process, moods: [standards]}
+  - {q: "neutral buoyancy laboratory", folder: 10_failure_process, moods: [training]}
+  - {q: "capsule splashdown", folder: 11_return, moods: [proof]}
+  - {q: "Crew Dragon splashdown", folder: 11_return, moods: [proof]}
+  - {q: "Earthrise Apollo", folder: 12_still_kb, moods: [heritage], media_type: image}
+  - {q: "bootprint Moon Apollo 11", folder: 12_still_kb, moods: [heritage], media_type: image}
+  - {q: "Pale Blue Dot", folder: 12_still_kb, moods: [humility], media_type: image}
