@@ -33,7 +33,7 @@ Rules for every ticket:
 
 ---
 
-## T0. Repo hygiene
+## T0. Repo hygiene (DONE)
 As written in `07_PROMPT_CLAUDE_CODE.md`, plus:
 * Commit this file as `docs/handover/10_TICKETS.md`. Add one line to root `README.md`: "Current scope: `docs/handover/10_TICKETS.md` supersedes older handover docs where they conflict."
 * Empty modules with docstrings in `pipeline/`: `__init__.py`, `config.py`, `themes.py`, `script_agent.py`, `tts.py`, `snippets.py`, `assemble.py`, `youtube_upload.py`, `runlog.py`, `run_daily.py`.
@@ -45,7 +45,9 @@ As written in `07_PROMPT_CLAUDE_CODE.md`, plus:
 
 Done when: `pytest` passes, `git status` clean, no binaries tracked.
 
-## T1a. Config and themes
+## T1a. Config and themes (DONE, d441449)
+Accepted as built, including same day idempotent `pick_theme` and repo relative paths.
+
 `pipeline/config.py`
 ```python
 @dataclass(frozen=True)
@@ -69,7 +71,14 @@ def mark_used(path: Path, theme_id: str, today: date) -> None: ...  # atomic wri
 ```
 
 ## T1b. Script agent
-Prerequisite from Claude AI: `prompts/script_system.md`, `prompts/fewshot_01.json`, `prompts/fewshot_02.json`, 30 themes.
+Prerequisites from Claude AI (delivered): `prompts/script_system.md`, `prompts/fewshot_01.json`, `prompts/fewshot_02.json`, `data/themes.json` with 30 themes.
+
+Theme contract change: each theme now also carries `facts`, a list of vetted fact strings (may be empty). Extend `load_themes` to accept it (list of strings, default empty) and add a test.
+
+Prompt assembly:
+* System message: contents of `prompts/script_system.md`.
+* Few-shots as alternating turns: user = the example's `theme` as JSON, assistant = the example's `output` as JSON. Then user = today's theme as JSON (without `last_used`).
+* The model returns `{"videos": [...]}`. Code adds `id` (ISO date) and `theme_id`, then appends the credit block to each description.
 
 Package schema (replaces `video_package.json` in `05_DATA_CONTRACTS.md`), stored at `pipeline/schemas/daily_package.json`:
 ```json
@@ -98,7 +107,10 @@ def estimate_duration_sec(text: str, wpm: int = 140) -> float: ...
 ```
 * Exactly one `main` and one `punch`.
 * Estimated duration: main 60 to 180 s, punch 22 to 32 s. Otherwise retry up to 3 times, then raise.
-* Every mood must be in `MOODS`.
+* Every mood must be in `MOODS`; 1 to 3 per block.
+* Each block 5 to 30 words. Every `emphasis` word must appear in that block's text.
+* Fact guard: any digit sequence in any script block (for example `2006`, `400`, `11.2`) must appear in that theme's `facts`. Otherwise reject and retry. This stops invented statistics in an unattended pipeline.
+* `hook_text` max 6 words, `title` max 90 characters.
 * Append the credit block from `02_CHANNEL_FORMAT.md` to every description in code. Never trust the LLM with it.
 * Keep the LLM client in one function so the vendor can change.
 
@@ -116,7 +128,11 @@ def concat_voice(blocks: list[BlockAudio], out: Path, gap_sec: float = 0.35) -> 
 * Voice ID from config only. Test with a mocked client.
 
 ## T3. Snippet index and picker
-`data/snippets.csv`: `path,folder,moods,duration_sec,width,height,last_used`
+`data/snippets.csv`: `path,folder,moods,duration_sec,width,height,nasa_id,credit,faces,logo_risk,last_used` (update the T0 header)
+
+* `nasa_id`, `credit`: left blank by the scanner, filled by hand in the CSV when known. A rescan must preserve hand edited values.
+* `faces`, `logo_risk`: 0 or 1, set from reserved filename tags `faces` and `logo` (these are flags, not moods).
+* Picker never selects `logo_risk=1`. `faces=1` is allowed, but never as the first shot of a video.
 
 `pipeline/snippets.py`
 ```python
@@ -125,7 +141,7 @@ def library_ok(cfg: Config) -> bool: ...
 def pick(moods: list[str], seconds: float, used_today: set[str], cfg: Config, today: date) -> list[Snippet]: ...
 def mark_used(paths: list[str], today: date, cfg: Config) -> None: ...
 ```
-* Moods: folder defaults from `broll/queries.yaml` plus tags after a double underscore in the filename (`launch_sls_01__pressure_ignition.mp4`).
+* Moods: folder defaults from `broll/queries.yaml` plus tags after a double underscore in the filename (`launch_sls_01__pressure_ignition_faces.mp4`). Unknown tags are logged and ignored.
 * Reject under 1080 px tall or outside 4 to 12 s; log rejects.
 * Order: mood match, then least recently used. Never in `used_today` (shared across both videos of the day), never inside cooldown.
 * Mood pool empty: fall back to any mood, then fail closed.
@@ -150,6 +166,7 @@ def render(shots: list[Shot], captions: list[Caption], voice: Path, hook_text: s
 ```
 * Output 1080x1920, 30 fps, H.264 + AAC. FFmpeg filter graphs, not MoviePy frame loops.
 * Per shot: center crop 16:9 to 9:16, slow zoom when `zoom`, dark grade (contrast up, crushed blacks, slight desaturation, grain), source audio dropped.
+* Font: default Anton (SIL Open Font License). Commit the `.ttf` and its `OFL.txt` under `assets/fonts/` and point `FONT_PATH` at it.
 * Captions: generated `.ass` file, large bold font centered in the lower third area safe from the Shorts UI (keep the bottom 20% and right 15% clear); `emphasis` words in an accent color.
 * First frame: `hook_text` burned in over the first shot for the first 1.5 s.
 * Music: random track from `music/`, sidechain ducked under the voice, whole mix at about -14 LUFS.
@@ -191,8 +208,11 @@ Not a Code ticket. Cut from `broll/SOURCE_LIST.md` with `cut_snippet.sh`, keepin
 ## T9. Dry run
 Three days of `--dry-run`, then three days of real unlisted uploads. Tom checks: first 2 seconds grab, voice consistent, captions readable on a phone, no NASA endorsement implied.
 
-## T10. Cron
-Crontab for 02:00 Asia/Phnom_Penh: `cd` into the repo, activate the venv, run, log to `output/cron.log`. Machine must be on and online at 02:00.
+## T10. Scheduler (Windows)
+The machine is Windows with PowerShell. Use Task Scheduler, not cron:
+* `scripts/run_daily.ps1`: `Set-Location` to the repo, activate the venv, run `python -m pipeline.run_daily`, append output to `output/scheduler.log`.
+* `scripts/install_task.ps1`: registers a daily task at 02:00 local time (Asia/Phnom_Penh) with "run whether user is logged on or not" and "wake the computer to run".
+* The machine must be powered and online at 02:00.
 
 ## T11. Long form manual mode (later)
 Reuse `render()` at 1920x1080 with Tom's recorded narration as the voice file. Not ticketed yet.

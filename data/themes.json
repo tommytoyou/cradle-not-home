@@ -1,17 +1,378 @@
 [
-  {"id": "theme_01", "title_seed": "TODO — Claude AI supplies theme 01", "angles": [], "last_used": null},
-  {"id": "theme_02", "title_seed": "TODO — Claude AI supplies theme 02", "angles": [], "last_used": null},
-  {"id": "theme_03", "title_seed": "TODO — Claude AI supplies theme 03", "angles": [], "last_used": null},
-  {"id": "theme_04", "title_seed": "TODO — Claude AI supplies theme 04", "angles": [], "last_used": null},
-  {"id": "theme_05", "title_seed": "TODO — Claude AI supplies theme 05", "angles": [], "last_used": null},
-  {"id": "theme_06", "title_seed": "TODO — Claude AI supplies theme 06", "angles": [], "last_used": null},
-  {"id": "theme_07", "title_seed": "TODO — Claude AI supplies theme 07", "angles": [], "last_used": null},
-  {"id": "theme_08", "title_seed": "TODO — Claude AI supplies theme 08", "angles": [], "last_used": null},
-  {"id": "theme_09", "title_seed": "TODO — Claude AI supplies theme 09", "angles": [], "last_used": null},
-  {"id": "theme_10", "title_seed": "TODO — Claude AI supplies theme 10", "angles": [], "last_used": null},
-  {"id": "theme_11", "title_seed": "TODO — Claude AI supplies theme 11", "angles": [], "last_used": null},
-  {"id": "theme_12", "title_seed": "TODO — Claude AI supplies theme 12", "angles": [], "last_used": null},
-  {"id": "theme_13", "title_seed": "TODO — Claude AI supplies theme 13", "angles": [], "last_used": null},
-  {"id": "theme_14", "title_seed": "TODO — Claude AI supplies theme 14", "angles": [], "last_used": null},
-  {"id": "theme_15", "title_seed": "TODO — Claude AI supplies theme 15", "angles": [], "last_used": null}
+  {
+    "id": "cradle",
+    "title_seed": "The cradle is not home",
+    "angles": [
+      "comfort is a trap",
+      "growing means leaving",
+      "the start is not the destination"
+    ],
+    "facts": [
+      "Konstantin Tsiolkovsky, a Russian rocketry pioneer, wrote that Earth is the cradle of humanity but no one can live in the cradle forever."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "escape-velocity",
+    "title_seed": "Half effort falls back",
+    "angles": [
+      "there is a minimum speed to leave",
+      "partial commitment returns you to the ground",
+      "the threshold does not negotiate"
+    ],
+    "facts": [
+      "Escape velocity from Earth's surface is about 11.2 kilometers per second."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "countdown",
+    "title_seed": "The countdown does not wait for you",
+    "angles": [
+      "readiness is built before the clock",
+      "holds are planned, not excuses",
+      "the window closes"
+    ],
+    "facts": [],
+    "last_used": null
+  },
+  {
+    "id": "go-no-go",
+    "title_seed": "Go or no go",
+    "angles": [
+      "every station answers honestly",
+      "no maybes on launch day",
+      "your status report to yourself"
+    ],
+    "facts": [],
+    "last_used": null
+  },
+  {
+    "id": "max-q",
+    "title_seed": "Throttle down, don't abort",
+    "angles": [
+      "the moment of maximum pressure",
+      "you ease off, you don't quit",
+      "pressure passes if you hold together"
+    ],
+    "facts": [
+      "Max Q is the moment during launch when aerodynamic stress on the vehicle is highest, usually around a minute after liftoff."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "staging",
+    "title_seed": "Drop what got you here",
+    "angles": [
+      "stage separation",
+      "what launched you will not orbit you",
+      "dead weight costs everything"
+    ],
+    "facts": [
+      "The Space Shuttle's solid rocket boosters separated about two minutes after launch."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "orbit-is-falling",
+    "title_seed": "Orbit is falling and missing",
+    "angles": [
+      "momentum is the only reason you stay up",
+      "stop moving and you come down",
+      "constant falling as a way of life"
+    ],
+    "facts": [
+      "The International Space Station travels at about 28,000 kilometers per hour and circles Earth roughly every 90 minutes."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "pale-blue-dot",
+    "title_seed": "Everything on one pixel",
+    "angles": [
+      "the scale of your excuses",
+      "humility as fuel",
+      "your problems from six billion kilometers"
+    ],
+    "facts": [
+      "In 1990 Voyager 1 photographed Earth from about six billion kilometers away, where it appeared as a single tiny dot."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "interstellar",
+    "title_seed": "Keep going past the edge",
+    "angles": [
+      "endurance past the finish line",
+      "work that outlives the plan",
+      "the heliosphere as a boundary you cross"
+    ],
+    "facts": [
+      "Voyager 1 launched in 1977 and crossed into interstellar space in 2012."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "two-hours",
+    "title_seed": "Two hours a day in orbit",
+    "angles": [
+      "discipline where your body wants to weaken",
+      "maintenance is not optional",
+      "the environment is against you"
+    ],
+    "facts": [
+      "Astronauts on the space station exercise about two hours a day to limit bone and muscle loss."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "light-delay",
+    "title_seed": "Nobody can save you in real time",
+    "angles": [
+      "self reliance",
+      "decisions without backup",
+      "you are the one on site"
+    ],
+    "facts": [
+      "A radio signal between Earth and Mars takes roughly 3 to 22 minutes one way, depending on where the planets are."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "work-the-problem",
+    "title_seed": "Work the problem",
+    "angles": [
+      "panic wastes oxygen",
+      "solve the next step only",
+      "calm is a skill"
+    ],
+    "facts": [
+      "In 1970 an oxygen tank failed on Apollo 13 on the way to the Moon, and the crew returned safely to Earth."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "checklists",
+    "title_seed": "The checklist is the discipline",
+    "angles": [
+      "skill without process fails",
+      "boring steps save missions",
+      "you are not above the list"
+    ],
+    "facts": [],
+    "last_used": null
+  },
+  {
+    "id": "rehearse-in-water",
+    "title_seed": "Rehearse where it's safe to fail",
+    "angles": [
+      "train harder than the mission",
+      "repetition until it's boring",
+      "failure belongs in practice"
+    ],
+    "facts": [
+      "NASA's Neutral Buoyancy Laboratory pool holds about 6.2 million gallons of water and is used to rehearse spacewalks."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "abort-system",
+    "title_seed": "Build the escape before you need it",
+    "angles": [
+      "plan for failure in advance",
+      "courage is preparation",
+      "safety systems are not weakness"
+    ],
+    "facts": [],
+    "last_used": null
+  },
+  {
+    "id": "alone-out-there",
+    "title_seed": "Alone out there",
+    "angles": [
+      "isolation as a condition of doing hard things",
+      "no one to hand it to",
+      "loneliness is not a reason to stop"
+    ],
+    "facts": [
+      "The International Space Station orbits about 400 kilometers above Earth."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "reentry",
+    "title_seed": "The return is earned",
+    "angles": [
+      "coming back is part of the mission",
+      "you go through the fire to finish",
+      "shielding is built long before"
+    ],
+    "facts": [
+      "During Artemis I, Orion's heat shield faced temperatures of about 2,760 degrees Celsius on reentry."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "first-footprint",
+    "title_seed": "Someone had to go first",
+    "angles": [
+      "being first means no map",
+      "the fear of no precedent",
+      "you are first in your own life"
+    ],
+    "facts": [
+      "Apollo 11 landed on the Moon on July 20, 1969."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "proof-elsewhere",
+    "title_seed": "Prove it somewhere new",
+    "angles": [
+      "small attempts that change what's possible",
+      "prototype courage",
+      "one flight changes the category"
+    ],
+    "facts": [
+      "On April 19, 2021, the Ingenuity helicopter made the first powered, controlled flight on another planet."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "maintenance",
+    "title_seed": "The station doesn't clean itself",
+    "angles": [
+      "the unglamorous work",
+      "upkeep is the mission",
+      "nobody films the chores"
+    ],
+    "facts": [
+      "The International Space Station has been continuously crewed since November 2000."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "control-room",
+    "title_seed": "Every console matters",
+    "angles": [
+      "your role in something larger",
+      "no small positions",
+      "reliability is respect"
+    ],
+    "facts": [],
+    "last_used": null
+  },
+  {
+    "id": "test-stand",
+    "title_seed": "Burn it on the ground first",
+    "angles": [
+      "test before you trust",
+      "failure is cheaper early",
+      "the full duration test"
+    ],
+    "facts": [
+      "NASA tests RS-25 rocket engines at Stennis Space Center in Mississippi before they fly."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "deep-time",
+    "title_seed": "Missions longer than careers",
+    "angles": [
+      "commit to something that takes decades",
+      "patience as strategy",
+      "you won't see results this year"
+    ],
+    "facts": [
+      "Cassini launched in 1997, reached Saturn in 2004, and ended its mission in 2017."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "earthrise",
+    "title_seed": "See it from outside",
+    "angles": [
+      "perspective changes priorities",
+      "step out of your own orbit",
+      "the view from far away"
+    ],
+    "facts": [
+      "The Earthrise photograph was taken by the Apollo 8 crew in lunar orbit in December 1968."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "unfold-in-the-dark",
+    "title_seed": "Unfold in the dark",
+    "angles": [
+      "everything has to work with no one watching",
+      "hundreds of steps, no do-overs",
+      "precision under isolation"
+    ],
+    "facts": [
+      "The James Webb Space Telescope launched on December 25, 2021, and its primary mirror is made of 18 hexagonal segments."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "keep-driving",
+    "title_seed": "Built for two years, still driving",
+    "angles": [
+      "outlast the plan",
+      "slow progress over rough ground",
+      "the mission is what you make it"
+    ],
+    "facts": [
+      "The Curiosity rover landed on Mars in August 2012 with a primary mission planned for about two years."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "splashdown",
+    "title_seed": "Come back with proof",
+    "angles": [
+      "results over talk",
+      "bring something back",
+      "the return is the receipt"
+    ],
+    "facts": [],
+    "last_used": null
+  },
+  {
+    "id": "leave-the-well",
+    "title_seed": "Leave the well",
+    "angles": [
+      "the start costs the most",
+      "most of the effort is spent early",
+      "gravity is heaviest at the beginning"
+    ],
+    "facts": [
+      "Most of a rocket's mass at liftoff is propellant."
+    ],
+    "last_used": null
+  },
+  {
+    "id": "physics-doesnt-negotiate",
+    "title_seed": "Physics does not lower the bar",
+    "angles": [
+      "standards that don't care about your feelings",
+      "reality grades the work",
+      "no partial credit in orbit"
+    ],
+    "facts": [],
+    "last_used": null
+  },
+  {
+    "id": "night-side",
+    "title_seed": "Half of every orbit is dark",
+    "angles": [
+      "darkness is scheduled, not permanent",
+      "keep working through the night pass",
+      "light comes back on time"
+    ],
+    "facts": [
+      "Crew on the space station see about 16 sunrises and 16 sunsets every day."
+    ],
+    "last_used": null
+  }
 ]

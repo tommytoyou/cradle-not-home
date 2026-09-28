@@ -1,0 +1,241 @@
+{
+  "theme": {
+    "id": "example-long-coast",
+    "title_seed": "The coast is the mission",
+    "angles": [
+      "the boring middle",
+      "trajectory over motivation",
+      "restarting is how you never arrive"
+    ],
+    "facts": [
+      "New Horizons launched in 2006 and flew past Pluto in 2015, spending most of the trip in hibernation."
+    ],
+    "last_used": null
+  },
+  "output": {
+    "videos": [
+      {
+        "format": "main",
+        "title": "You Keep Relaunching Because You Can't Stand the Coast",
+        "description": "The launch gets the attention. The long quiet middle is where the distance actually gets covered.",
+        "tags": [
+          "space motivation",
+          "discipline",
+          "new horizons",
+          "consistency",
+          "patience",
+          "mindset",
+          "space"
+        ],
+        "duration_target_sec": 71,
+        "hook_text": "Nine years of silence",
+        "script_blocks": [
+          {
+            "text": "Nine years. New Horizons left Earth in 2006 and reached Pluto in 2015.",
+            "moods": [
+              "leaving",
+              "destination",
+              "scale"
+            ],
+            "emphasis": [
+              "Nine"
+            ]
+          },
+          {
+            "text": "For most of that trip, it slept.",
+            "moods": [
+              "isolation"
+            ],
+            "emphasis": [
+              "slept"
+            ]
+          },
+          {
+            "text": "No applause. No visible progress. Just distance closing in the dark.",
+            "moods": [
+              "isolation",
+              "grind"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "That's the part you can't stand.",
+            "moods": [
+              "pressure"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "Not the launch. You love the launch. Everyone watches the launch.",
+            "moods": [
+              "ignition",
+              "commitment"
+            ],
+            "emphasis": [
+              "launch"
+            ]
+          },
+          {
+            "text": "You can't stand the coast.",
+            "moods": [
+              "grind"
+            ],
+            "emphasis": [
+              "coast"
+            ]
+          },
+          {
+            "text": "The weeks where nothing looks different. Where you do the work and the work doesn't answer.",
+            "moods": [
+              "grind",
+              "discipline"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "So you quit. You pick a new goal. You launch again.",
+            "moods": [
+              "pressure"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "New plan. New energy. Same starting line.",
+            "moods": [
+              "pressure",
+              "grind"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "And you never arrive anywhere.",
+            "moods": [
+              "isolation"
+            ],
+            "emphasis": [
+              "never"
+            ]
+          },
+          {
+            "text": "Every restart feels like progress. It's the same first mile, over and over, with a new name.",
+            "moods": [
+              "grind",
+              "pressure"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "That spacecraft didn't need motivation. It needed a trajectory and someone checking it.",
+            "moods": [
+              "systems",
+              "discipline"
+            ],
+            "emphasis": [
+              "trajectory"
+            ]
+          },
+          {
+            "text": "Boring checks. On schedule. For years, with no one cheering.",
+            "moods": [
+              "systems",
+              "work"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "The flyby was over in a day. The coast took nearly a decade.",
+            "moods": [
+              "scale",
+              "proof"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "Stop judging your mission by how it looks in the middle.",
+            "moods": [
+              "standards"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "Point yourself at something far away. Then keep flying.",
+            "moods": [
+              "destination",
+              "commitment"
+            ],
+            "emphasis": [
+              "flying"
+            ]
+          }
+        ]
+      },
+      {
+        "format": "punch",
+        "title": "The Middle Is Where the Distance Gets Covered",
+        "description": "Most of any long mission is quiet. That is not failure. That is the trip.",
+        "tags": [
+          "space motivation",
+          "consistency",
+          "new horizons",
+          "shorts",
+          "discipline",
+          "space"
+        ],
+        "duration_target_sec": 23,
+        "hook_text": "You hate the quiet part",
+        "script_blocks": [
+          {
+            "text": "New Horizons flew for nine years to reach Pluto.",
+            "moods": [
+              "scale",
+              "destination"
+            ],
+            "emphasis": [
+              "nine"
+            ]
+          },
+          {
+            "text": "Most of that time, it slept in silence.",
+            "moods": [
+              "isolation"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "No one watched. Nothing changed. The distance just closed.",
+            "moods": [
+              "grind"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "You keep restarting because the middle feels like failure.",
+            "moods": [
+              "pressure"
+            ],
+            "emphasis": [
+              "restarting"
+            ]
+          },
+          {
+            "text": "It isn't. The middle is the trip.",
+            "moods": [
+              "reveal"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "Stop relaunching. Check your heading, do today's work, and stay on course.",
+            "moods": [
+              "commitment",
+              "discipline"
+            ],
+            "emphasis": [
+              "course"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

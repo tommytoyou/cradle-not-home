@@ -1,0 +1,235 @@
+{
+  "theme": {
+    "id": "example-gravity-assist",
+    "title_seed": "Use what pulls on you",
+    "angles": [
+      "pressure as propulsion",
+      "you only get the boost if you fly close",
+      "precision is the price"
+    ],
+    "facts": [
+      "Voyager 2 used the gravity of Jupiter, Saturn, Uranus and Neptune to gain speed and reach each next planet."
+    ],
+    "last_used": null
+  },
+  "output": {
+    "videos": [
+      {
+        "format": "main",
+        "title": "The Thing Pulling You Down Is Your Engine",
+        "description": "Spacecraft reach the outer planets by using the pull they could never fight. So can you.",
+        "tags": [
+          "space motivation",
+          "discipline",
+          "voyager",
+          "gravity assist",
+          "mindset",
+          "self improvement",
+          "space"
+        ],
+        "duration_target_sec": 79,
+        "hook_text": "It's not holding you back",
+        "script_blocks": [
+          {
+            "text": "Everything pulling on you feels like it's holding you back.",
+            "moods": [
+              "pressure"
+            ],
+            "emphasis": [
+              "holding"
+            ]
+          },
+          {
+            "text": "The doubt. The bills. The people who need you to stay small.",
+            "moods": [
+              "pressure",
+              "grind"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "You call it weight. The people who fly to the outer planets call it fuel.",
+            "moods": [
+              "reveal",
+              "scale"
+            ],
+            "emphasis": [
+              "fuel"
+            ]
+          },
+          {
+            "text": "Voyager 2 flew past Jupiter, Saturn, Uranus and Neptune.",
+            "moods": [
+              "scale",
+              "awe"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "Every one of them pulled on it. Every one of them threw it faster toward the next.",
+            "moods": [
+              "scale",
+              "leaving"
+            ],
+            "emphasis": [
+              "faster"
+            ]
+          },
+          {
+            "text": "The pull wasn't the obstacle. The pull was the plan.",
+            "moods": [
+              "reveal"
+            ],
+            "emphasis": [
+              "plan"
+            ]
+          },
+          {
+            "text": "But you only get the boost if you fly close.",
+            "moods": [
+              "pressure",
+              "commitment"
+            ],
+            "emphasis": [
+              "close"
+            ]
+          },
+          {
+            "text": "Pass too far and nothing happens. You stay on the same slow line forever.",
+            "moods": [
+              "isolation"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "Pass carelessly and it swallows you.",
+            "moods": [
+              "standards"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "So the precision is the price. Years of work for one clean pass.",
+            "moods": [
+              "systems",
+              "discipline"
+            ],
+            "emphasis": [
+              "price"
+            ]
+          },
+          {
+            "text": "You want the speed without the math. You want the slingshot without the approach.",
+            "moods": [
+              "pressure"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "That trade has never existed. Not in orbit. Not in your life.",
+            "moods": [
+              "standards"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "Aim at the thing that scares you. Get close enough to feel it bend your path.",
+            "moods": [
+              "commitment",
+              "ignition"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "Then let it throw you.",
+            "moods": [
+              "leaving"
+            ],
+            "emphasis": [
+              "throw"
+            ]
+          },
+          {
+            "text": "The pressure you keep running from is the only engine big enough to get you out.",
+            "moods": [
+              "leaving",
+              "ignition"
+            ],
+            "emphasis": [
+              "engine"
+            ]
+          },
+          {
+            "text": "Stop fighting the pull. Use it.",
+            "moods": [
+              "commitment"
+            ],
+            "emphasis": [
+              "Use"
+            ]
+          }
+        ]
+      },
+      {
+        "format": "punch",
+        "title": "Stop Fighting the Pull",
+        "description": "The pull you resist can be the thing that launches you.",
+        "tags": [
+          "space motivation",
+          "discipline",
+          "voyager",
+          "shorts",
+          "mindset",
+          "space"
+        ],
+        "duration_target_sec": 24,
+        "hook_text": "Pressure is fuel",
+        "script_blocks": [
+          {
+            "text": "You think the pressure is your problem.",
+            "moods": [
+              "pressure"
+            ],
+            "emphasis": [
+              "problem"
+            ]
+          },
+          {
+            "text": "Voyager 2 reached four giant planets, and every one of them made it faster.",
+            "moods": [
+              "scale",
+              "awe"
+            ],
+            "emphasis": [
+              "faster"
+            ]
+          },
+          {
+            "text": "Not by resisting their pull. By using it.",
+            "moods": [
+              "reveal"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "Fly close to the thing that scares you. Close enough to bend your path.",
+            "moods": [
+              "commitment"
+            ],
+            "emphasis": []
+          },
+          {
+            "text": "Then let it throw you further than you could ever push yourself.",
+            "moods": [
+              "leaving",
+              "ignition"
+            ],
+            "emphasis": [
+              "throw"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
