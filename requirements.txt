@@ -1,0 +1,9 @@
+requests
+pyyaml
+moviepy
+pillow
+google-api-python-client
+google-auth-oauthlib
+python-dotenv
+pytest
+jsonschema

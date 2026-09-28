@@ -4,6 +4,8 @@ Private pipeline for one original space-motivation YouTube video per day.
 
 **Roles:** Stakeholder Tom Erickson · Architect specs in `docs/handover/` · Claude AI developer · Claude Code coder.
 
+Current scope: `docs/handover/10_TICKETS.md` supersedes older handover docs where they conflict.
+
 ## Start here
 
 1. Read `docs/handover/00_README.md`

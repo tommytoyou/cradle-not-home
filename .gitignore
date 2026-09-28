@@ -16,3 +16,8 @@ output/
 *.mp3
 catalog.json
 .DS_Store
+
+# OAuth artifacts and run log — the repo is public
+token.json
+client_secret*.json
+data/runs.jsonl
