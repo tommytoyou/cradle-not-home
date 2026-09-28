@@ -4,7 +4,9 @@ Loads themes, picks the day's theme (never-used first, then oldest
 ``last_used``), and records the pick with an atomic write so a crashed run
 cannot corrupt the file.
 
-``last_used`` is an ISO date string (``"2026-09-28"``) or ``null``.
+``last_used`` is an ISO date string (``"2026-09-28"``) or ``null``. ``facts`` is
+an optional list of vetted fact strings (T1b) — absent means no facts, and the
+script agent's fact guard then forbids every digit in the script.
 """
 
 from __future__ import annotations
@@ -59,6 +61,10 @@ def load_themes(path: Path) -> list[dict]:
             raise ThemeError(f"{path} has a duplicate theme id: {theme_id!r}")
         seen.add(theme_id)
         _last_used(theme)
+
+        facts = theme.setdefault("facts", [])
+        if not isinstance(facts, list) or not all(isinstance(f, str) for f in facts):
+            raise ThemeError(f"theme {theme_id!r} facts must be a list of strings")
 
     return raw
 

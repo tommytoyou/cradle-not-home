@@ -26,13 +26,14 @@ def test_repo_scaffolding():
         module = importlib.import_module(f"pipeline.{name}")
         assert module.__doc__, f"pipeline/{name}.py needs a docstring"
 
-    # Theme stubs: at least 15, unique ids, no content written yet.
+    # Themes: 30 delivered by Claude AI, unique ids, none used yet.
     themes = json.loads((ROOT / "data" / "themes.json").read_text(encoding="utf-8"))
-    assert len(themes) >= 15
+    assert len(themes) >= 30
     assert len({t["id"] for t in themes}) == len(themes)
     for theme in themes:
-        assert set(theme) == {"id", "title_seed", "angles", "last_used"}
-        assert theme["angles"] == []
+        assert set(theme) == {"id", "title_seed", "angles", "facts", "last_used"}
+        assert theme["title_seed"]
+        assert theme["angles"]
         assert theme["last_used"] is None
 
     # Snippet index: header only, columns as specified in T3.

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Daily package",
+  "description": "One day's output: two vertical Shorts from one theme. Replaces video_package.json in 05_DATA_CONTRACTS.md. Structural rules only; duration, mood vocabulary, word counts and the fact guard live in pipeline/script_agent.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "theme_id", "videos"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "ISO date the package was built for"
+    },
+    "theme_id": {"type": "string", "minLength": 1},
+    "videos": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {"$ref": "#/$defs/video"}
+    }
+  },
+  "$defs": {
+    "video": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "title",
+        "description",
+        "tags",
+        "duration_target_sec",
+        "hook_text",
+        "script_blocks"
+      ],
+      "properties": {
+        "format": {"enum": ["main", "punch"]},
+        "title": {"type": "string", "minLength": 1, "maxLength": 90},
+        "description": {"type": "string", "minLength": 1},
+        "tags": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "duration_target_sec": {"type": "number", "exclusiveMinimum": 0},
+        "hook_text": {"type": "string", "minLength": 1},
+        "script_blocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/script_block"}
+        }
+      }
+    },
+    "script_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "moods", "emphasis"],
+      "properties": {
+        "text": {"type": "string", "minLength": 1},
+        "moods": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "emphasis": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

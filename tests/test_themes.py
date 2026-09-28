@@ -62,6 +62,38 @@ def test_load_rejects_unreadable_last_used(tmp_path):
         load_themes(write(tmp_path, [stub("a", "not-a-date")]))
 
 
+def test_load_keeps_facts_and_defaults_them_to_empty(tmp_path):
+    with_facts = stub("a") | {"facts": ["Voyager 2 flew past four giant planets."]}
+    without = stub("b")
+    path = write(tmp_path, [with_facts, without])
+
+    themes = load_themes(path)
+
+    assert themes[0]["facts"] == ["Voyager 2 flew past four giant planets."]
+    assert themes[1]["facts"] == []
+
+
+def test_load_rejects_facts_that_are_not_a_list_of_strings(tmp_path):
+    path = write(tmp_path, [stub("a") | {"facts": "one long string"}])
+
+    with pytest.raises(ThemeError, match="facts"):
+        load_themes(path)
+
+    path = write(tmp_path, [stub("b") | {"facts": [42]}])
+
+    with pytest.raises(ThemeError, match="facts"):
+        load_themes(path)
+
+
+def test_the_real_themes_file_loads(tmp_path):
+    from pipeline.config import ROOT
+
+    themes = load_themes(ROOT / "data" / "themes.json")
+
+    assert len(themes) == 30
+    assert all(isinstance(theme["facts"], list) for theme in themes)
+
+
 def test_pick_prefers_never_used_in_file_order():
     themes = [stub("a", "2026-09-01"), stub("b"), stub("c")]
 
