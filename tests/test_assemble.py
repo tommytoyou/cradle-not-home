@@ -341,11 +341,11 @@ def test_a_thin_library_fails_closed(tmp_path):
 
 def test_a_face_opens_with_a_warning_when_there_are_no_spare_clips(tmp_path, caplog):
     cfg = make_cfg(tmp_path)
-    # Exactly enough clips for the three blocks (1 + 3 + 1), no headroom.
-    write_index(cfg, [row("face.mp4", "pressure", faces="1"), *[row(f"{i}.mp4") for i in range(4)]])
+    write_index(cfg, [row("face.mp4", "pressure", faces="1")])
+    video = {"script_blocks": VIDEO["script_blocks"][:1]}
 
     with caplog.at_level("WARNING"):
-        shots, _ = build_timeline(VIDEO, blocks_for_video(), cfg, TODAY, set())
+        shots, _ = build_timeline(video, [audio(0, 2.6)], cfg, TODAY, set())
 
     assert shots[0].snippet.name == "face.mp4"
     assert "keep a face off the first shot" in caplog.text
