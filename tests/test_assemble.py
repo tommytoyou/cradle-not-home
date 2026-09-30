@@ -120,6 +120,11 @@ def test_shot_count_aims_for_three_seconds():
 
 def test_a_span_under_two_seconds_is_one_shot():
     assert shot_count(1.4) == 1
+    assert shot_count(1.5) == 1
+
+
+def test_a_four_second_span_is_one_shot():
+    assert shot_count(4.0) == 1
 
 
 # --- source_start ----------------------------------------------------------
@@ -170,6 +175,19 @@ def test_chunks_are_three_to_five_words_and_keep_every_word(count):
 
     assert [w for chunk in chunks for w in chunk] == words
     assert all(3 <= len(chunk) <= 5 for chunk in chunks)
+
+
+def test_a_long_line_breaks_into_three_to_five_word_chunks():
+    text = "You were born in a cradle and you called it a home"
+
+    chunks = chunk_words(text.split())
+
+    assert all(3 <= len(chunk) <= 5 for chunk in chunks)
+    assert " ".join(" ".join(chunk) for chunk in chunks) == text
+
+
+def test_a_short_line_stays_whole():
+    assert chunk_words("Leave the well.".split()) == [["Leave", "the", "well."]]
 
 
 def test_a_short_block_is_one_chunk():
