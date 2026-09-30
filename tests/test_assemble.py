@@ -1,30 +1,52 @@
-"""T4a: shot cutting, source offsets, caption chunking, and the timeline.
+"""T4a timeline and T4b render.
 
-The picker runs for real against a CSV index in ``tmp_path``; no FFmpeg, no
-network. Render (T4b) tests will join this file when that ticket lands.
+The picker runs for real against a CSV index in ``tmp_path``. Render tests use
+generated fixture clips and silence; no network, and the FFmpeg ones skip when
+FFmpeg is not on PATH.
 """
 
 import csv
+import json
+import re
+import shutil
+import subprocess
 from datetime import date
 from pathlib import Path
 
 import pytest
 
 from pipeline.assemble import (
+    ACCENT,
+    FPS,
+    HEIGHT,
+    HOOK_SEC,
     MAX_SHOT_SEC,
     MIN_SHOT_SEC,
+    SAFE_BOTTOM,
+    SAFE_RIGHT,
     SKIP_HEAD_SEC,
+    WIDTH,
     Caption,
+    RenderError,
     Shot,
     TimelineError,
+    ass_time,
     block_captions,
     block_spans,
+    build_ass,
     build_timeline,
+    caption_markup,
     chunk_words,
+    final_graph,
+    font_family,
+    frame_counts,
+    pick_music,
+    render,
     shot_count,
+    shot_filter,
     source_start,
 )
-from pipeline.config import Config
+from pipeline.config import ROOT, Config
 from pipeline.snippets import FIELDNAMES, csv_path
 from pipeline.tts import BlockAudio
 
@@ -367,3 +389,292 @@ def test_a_face_opens_with_a_warning_when_there_are_no_spare_clips(tmp_path, cap
 
     assert shots[0].snippet.name == "face.mp4"
     assert "keep a face off the first shot" in caplog.text
+
+
+# --- render: pure pieces ---------------------------------------------------
+
+ANTON = ROOT / "assets" / "fonts" / "Anton-Regular.ttf"
+HAS_FFMPEG = shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None
+needs_ffmpeg = pytest.mark.skipif(not HAS_FFMPEG, reason="FFmpeg not on PATH")
+
+
+def test_frame_counts_do_not_drift_over_a_long_video():
+    shots = [Shot(Path("x.mp4"), 1.0, 2.95, False) for _ in range(70)]
+
+    counts = frame_counts(shots)
+
+    assert sum(counts) == round(70 * 2.95 * FPS)
+    assert set(counts) <= {88, 89}
+
+
+def test_frame_counts_follow_the_timeline_cut_points():
+    shots = [Shot(Path("x.mp4"), 1.0, d, False) for d in (2.017, 3.333, 2.65)]
+
+    edges, total = [], 0
+    for count in frame_counts(shots):
+        total += count
+        edges.append(total)
+
+    assert edges == [round(2.017 * FPS), round(5.35 * FPS), round(8.0 * FPS)]
+
+
+def test_shot_filter_crops_to_vertical_and_zooms_only_when_asked():
+    still = shot_filter(90, zoom=False)
+    moving = shot_filter(90, zoom=True)
+
+    for graph in (still, moving):
+        assert f"crop={WIDTH}:{HEIGHT}" in graph
+        assert "force_original_aspect_ratio=increase" in graph
+    assert "zoompan" not in still
+    assert "zoompan" in moving and f"s={WIDTH}x{HEIGHT}" in moving
+
+
+def test_final_graph_takes_audio_only_from_voice_and_music():
+    graph = final_graph(30.0)
+
+    assert "[0:a]" not in graph  # the joined shots carry no audio at all
+    assert "[1:a]" in graph and "[2:a]" in graph
+    assert "sidechaincompress" in graph
+    assert "loudnorm=I=-14" in graph
+
+
+@pytest.mark.parametrize(
+    "seconds, text",
+    [(0, "0:00:00.00"), (1.5, "0:00:01.50"), (61.234, "0:01:01.23"), (3725.5, "1:02:05.50")],
+)
+def test_ass_time(seconds, text):
+    assert ass_time(seconds) == text
+
+
+def style_fields(ass: str, name: str) -> dict[str, str]:
+    header = next(line for line in ass.splitlines() if line.startswith("Format: Name"))
+    keys = [key.strip() for key in header.removeprefix("Format:").split(",")]
+    line = next(line for line in ass.splitlines() if line.startswith(f"Style: {name},"))
+    return dict(zip(keys, (value.strip() for value in line.removeprefix("Style:").split(","))))
+
+
+def test_caption_style_keeps_clear_of_the_shorts_ui():
+    style = style_fields(build_ass([], "", "Anton"), "Caption")
+
+    assert style["Fontname"] == "Anton"
+    assert style["Alignment"] == "2"  # bottom centre, grows upward
+    assert int(style["MarginV"]) >= SAFE_BOTTOM
+    assert int(style["MarginR"]) >= SAFE_RIGHT
+    assert style["MarginL"] == style["MarginR"]  # centred on the frame
+
+
+def test_hook_is_shown_for_the_first_second_and_a_half():
+    ass = build_ass([], "Gravity is not the enemy", "Anton")
+
+    hook = [line for line in ass.splitlines() if line.startswith("Dialogue") and ",Hook," in line]
+    assert hook == [
+        f"Dialogue: 1,0:00:00.00,{ass_time(HOOK_SEC)},Hook,,0,0,0,,GRAVITY IS NOT THE ENEMY"
+    ]
+
+
+def test_empty_hook_adds_no_event():
+    assert ",Hook,,0" not in build_ass([], "  ", "Anton")
+
+
+def test_captions_become_timed_dialogue_lines():
+    ass = build_ass([Caption(1.2, 2.75, "Then let it throw you.", [])], "", "Anton")
+
+    assert "Dialogue: 0,0:00:01.20,0:00:02.75,Caption,,0,0,0,,Then let it throw you." in ass
+
+
+def test_emphasis_words_get_the_accent_colour():
+    markup = caption_markup(Caption(0, 1, "using it to go further.", ["further"]))
+
+    assert markup.startswith("using it to go ")
+    assert f"{{\\c{ACCENT}&}}further.{{" in markup
+    assert markup.count("\\c") == 2  # switched on, then back to white
+
+
+def test_script_text_cannot_inject_ass_overrides():
+    markup = caption_markup(Caption(0, 1, r"a {\b1} c\N", []))
+
+    assert "{" not in markup and "\\" not in markup
+
+
+def test_font_family_reads_the_committed_anton():
+    assert font_family(ANTON) == "Anton"
+    assert (ANTON.parent / "OFL.txt").is_file()
+
+
+def test_font_family_rejects_a_non_font(tmp_path):
+    fake = tmp_path / "font.ttf"
+    fake.write_text("not a font")
+
+    with pytest.raises(RenderError):
+        font_family(fake)
+
+
+def test_pick_music_ignores_non_audio_and_fails_closed_when_empty(tmp_path):
+    cfg = make_cfg(tmp_path)
+    cfg.music_dir.mkdir()
+    (cfg.music_dir / "notes.txt").write_text("x")
+
+    with pytest.raises(RenderError, match="no music"):
+        pick_music(cfg)
+
+    (cfg.music_dir / "bed.MP3").write_bytes(b"")
+    assert pick_music(cfg).name == "bed.MP3"
+
+
+def test_pick_music_fails_closed_without_a_folder(tmp_path):
+    with pytest.raises(RenderError, match="no music"):
+        pick_music(make_cfg(tmp_path))
+
+
+def test_render_checks_its_inputs_before_running_ffmpeg(tmp_path):
+    cfg = make_cfg(tmp_path, font_path=ANTON)
+    voice = tmp_path / "voice.wav"
+    shot = Shot(tmp_path / "clip.mp4", 1.0, 3.0, False)
+
+    with pytest.raises(RenderError, match="no shots"):
+        render([], [], voice, "", cfg, tmp_path / "out.mp4")
+    with pytest.raises(RenderError, match="voice file missing"):
+        render([shot], [], voice, "", cfg, tmp_path / "out.mp4")
+
+    voice.write_bytes(b"")
+    with pytest.raises(RenderError, match="font missing"):
+        render([shot], [], voice, "", make_cfg(tmp_path), tmp_path / "out.mp4")
+    with pytest.raises(RenderError, match="no music"):
+        render([shot], [], voice, "", cfg, tmp_path / "out.mp4")
+
+
+# --- render: a real 30 s video from fixture clips ----------------------------
+
+RENDER_SEC = 30.0
+# Wide glyphs, long enough to wrap, so the widest and tallest case is measured.
+LONG_LINE = "WWWWW MMMMMMM WWWWWWW MMMMMM WWWWW"
+
+
+def ffmpeg(*args: str) -> None:
+    subprocess.run(["ffmpeg", "-y", "-v", "error", *args], check=True)
+
+
+def probe(path: Path) -> dict:
+    output = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)],
+        capture_output=True, text=True, check=True,
+    ).stdout
+    return json.loads(output)
+
+
+def gray_frame(path: Path, at: float) -> bytes:
+    return subprocess.run(
+        ["ffmpeg", "-v", "error", "-ss", f"{at}", "-i", str(path), "-frames:v", "1",
+         "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+        capture_output=True, check=True,
+    ).stdout
+
+
+def bright_box(frame: bytes, threshold: int = 128) -> tuple[int, int, int, int] | None:
+    """(left, top, right, bottom) of pixels above ``threshold``, or None."""
+    table = bytes(1 if value > threshold else 0 for value in range(256))
+    left, top, right, bottom = WIDTH, None, -1, -1
+    for y in range(HEIGHT):
+        line = frame[y * WIDTH:(y + 1) * WIDTH].translate(table)
+        first = line.find(b"\x01")
+        if first < 0:
+            continue
+        top = y if top is None else top
+        bottom = y
+        left = min(left, first)
+        right = max(right, line.rfind(b"\x01"))
+    return None if top is None else (left, top, right, bottom)
+
+
+@pytest.fixture(scope="module")
+def rendered(tmp_path_factory):
+    """Black 16:9 clips carrying a loud tone, rendered over silent voice and music.
+
+    Black picture means anything bright in the output is caption or hook text;
+    silent voice and music mean anything audible leaked from the clips.
+    """
+    if not HAS_FFMPEG:
+        pytest.skip("FFmpeg not on PATH")
+    root = tmp_path_factory.mktemp("render")
+    cfg = make_cfg(root, font_path=ANTON)
+    cfg.music_dir.mkdir()
+
+    clips = []
+    for i in range(3):
+        clip = root / f"clip{i}.mp4"
+        ffmpeg("-f", "lavfi", "-i", "color=c=black:s=1920x1080:r=25:d=8",
+               "-f", "lavfi", "-i", "sine=f=1000:d=8:sample_rate=48000",
+               "-af", "volume=0.9", "-c:v", "libx264", "-preset", "ultrafast",
+               "-c:a", "aac", "-shortest", str(clip))
+        clips.append(clip)
+    voice = root / "voice.wav"
+    ffmpeg("-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono", "-t", "28", str(voice))
+    ffmpeg("-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-t", "7",
+           str(cfg.music_dir / "bed.wav"))
+
+    shots = [Shot(clips[i % 3], 2.0, 3.0, i % 2 == 1) for i in range(10)]
+    captions = [
+        Caption(2.0 + 2.5 * i, 4.5 + 2.5 * i, LONG_LINE, ["MMMMMMM"]) for i in range(11)
+    ]
+    return render(shots, captions, voice, "Gravity is not the enemy", cfg,
+                  root / "output" / "punch.mp4")
+
+
+@needs_ffmpeg
+def test_render_is_vertical_h264_aac_at_thirty_fps(rendered):
+    info = probe(rendered)
+    video = [s for s in info["streams"] if s["codec_type"] == "video"]
+    audio = [s for s in info["streams"] if s["codec_type"] == "audio"]
+
+    assert len(video) == 1 and len(audio) == 1
+    assert video[0]["codec_name"] == "h264"
+    assert (video[0]["width"], video[0]["height"]) == (WIDTH, HEIGHT)
+    assert video[0]["r_frame_rate"] == f"{FPS}/1"
+    assert video[0]["pix_fmt"] == "yuv420p"
+    assert audio[0]["codec_name"] == "aac"
+    assert float(info["format"]["duration"]) == pytest.approx(RENDER_SEC, abs=0.1)
+
+
+@needs_ffmpeg
+def test_render_plays_end_to_end(rendered):
+    result = subprocess.run(
+        ["ffmpeg", "-v", "error", "-i", str(rendered), "-f", "null", "-"],
+        capture_output=True, text=True,
+    )
+
+    assert result.returncode == 0
+    assert result.stderr.strip() == ""
+
+
+@needs_ffmpeg
+def test_render_has_no_source_audio(rendered):
+    result = subprocess.run(
+        ["ffmpeg", "-i", str(rendered), "-af", "volumedetect", "-vn", "-f", "null", "-"],
+        capture_output=True, text=True, check=True,
+    )
+    peak = float(re.search(r"max_volume: (-?[\d.]+|-inf) dB", result.stderr).group(1))
+
+    assert peak < -60
+
+
+@needs_ffmpeg
+def test_render_burns_the_hook_over_the_opening(rendered):
+    box = bright_box(gray_frame(rendered, 0.5))
+
+    assert box is not None
+    _, top, _, bottom = box
+    assert top < HEIGHT / 2 < bottom
+    assert bright_box(gray_frame(rendered, HOOK_SEC + 0.2)) is None  # before captions start
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize("at", [3.0, 10.0, 17.0, 26.0])
+def test_captions_stay_inside_the_safe_area(rendered, at):
+    box = bright_box(gray_frame(rendered, at))
+
+    assert box is not None, "caption missing"
+    left, top, right, bottom = box
+    assert bottom < HEIGHT - SAFE_BOTTOM
+    assert right < WIDTH - SAFE_RIGHT
+    assert WIDTH - right == pytest.approx(left, abs=40)  # centred
+    assert top > HEIGHT / 2  # lower part of the frame, even when wrapped
