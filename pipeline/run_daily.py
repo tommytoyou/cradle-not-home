@@ -4,7 +4,9 @@ Order: library check, theme pick, package, then per video (main, punch) TTS,
 timeline, render, upload; afterwards mark theme and clips used, log and notify.
 If either video fails before upload, neither is uploaded and nothing is marked
 used. ``--dry-run`` does everything except upload, and instead writes
-``upload_sheet.txt`` with what a manual upload needs. Output lands in
+``upload_sheet.txt`` with what a manual upload needs. A format that
+``data/runs.jsonl`` already shows uploaded that day is skipped, so re-running a
+day never uploads a video twice. Output lands in
 ``output/YYYY-MM-DD/{main,punch}.mp4``.
 """
 
@@ -21,7 +23,16 @@ from pathlib import Path
 from pipeline import snippets, themes
 from pipeline.assemble import build_timeline, render
 from pipeline.config import Config, ConfigError, load_config
-from pipeline.runlog import DRY_RUN, FAILED, UPLOADED, RunRecord, append_run, notify
+from pipeline.runlog import (
+    ALREADY_UPLOADED,
+    DRY_RUN,
+    FAILED,
+    UPLOADED,
+    RunRecord,
+    append_run,
+    notify,
+    uploaded_ids,
+)
 from pipeline.script_agent import build_package
 from pipeline.tts import concat_voice, synth_blocks
 from pipeline.youtube_upload import DEFAULT_PRIVACY, fit_tags, shorts_description, upload
@@ -179,7 +190,21 @@ def run(today: date, cfg: Config, dry_run: bool = False) -> list[RunRecord]:
                 notes=f"not uploaded; see {UPLOAD_SHEET_NAME}",
             ))
     else:
+        # A re-run of a day must never put the same video up twice.
+        already = uploaded_ids(stamp, cfg)
         for item in built:
+            if item.format in already:
+                log.warning(
+                    "%s already uploaded on %s as %s; skipping upload",
+                    item.format, stamp, already[item.format],
+                )
+                records.append(RunRecord(
+                    date=stamp, package_id=package_id, format=item.format,
+                    youtube_id=already[item.format], visibility=None,
+                    duration_sec=item.duration_sec, snippet_count=item.snippet_count,
+                    status=ALREADY_UPLOADED, notes="upload skipped; already in runs.jsonl",
+                ))
+                continue
             try:
                 youtube_id = upload(item.path, item.video, cfg, privacy=DEFAULT_PRIVACY)
             except Exception as exc:
@@ -200,7 +225,7 @@ def run(today: date, cfg: Config, dry_run: bool = False) -> list[RunRecord]:
 
     # A day where nothing went out stays unmarked, so a re-run gets the same
     # theme and clips. Once anything is public the material counts as used.
-    if any(record.status in (UPLOADED, DRY_RUN) for record in records):
+    if any(record.status in (UPLOADED, ALREADY_UPLOADED, DRY_RUN) for record in records):
         try:
             themes.mark_used(themes_path, theme["id"], today)
             snippets.mark_used(sorted(used_today), today, cfg)

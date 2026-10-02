@@ -22,6 +22,8 @@ WEBHOOK_TIMEOUT_SEC = 15
 UPLOADED = "uploaded"
 DRY_RUN = "dry_run"
 FAILED = "failed"
+# Not uploaded again because an earlier run that day already did it.
+ALREADY_UPLOADED = "already_uploaded"
 
 log = logging.getLogger(__name__)
 
@@ -49,6 +51,29 @@ def append_run(record: RunRecord, cfg: Config) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8", newline="\n") as handle:
         handle.write(json.dumps(asdict(record), ensure_ascii=False) + "\n")
+
+
+def uploaded_ids(day: str, cfg: Config) -> dict[str, str]:
+    """``{format: youtube_id}`` for every video already uploaded on ``day``.
+
+    Unreadable lines are skipped with a warning rather than stopping the run;
+    the guard only ever prevents uploads, never causes one.
+    """
+    path = runs_path(cfg)
+    if not path.is_file():
+        return {}
+    found: dict[str, str] = {}
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            log.warning("%s line %d is not JSON; ignored", path.name, number)
+            continue
+        if isinstance(entry, dict) and entry.get("date") == day and entry.get("youtube_id"):
+            found.setdefault(entry.get("format"), entry["youtube_id"])
+    return found
 
 
 def summary(records: list[RunRecord]) -> str:

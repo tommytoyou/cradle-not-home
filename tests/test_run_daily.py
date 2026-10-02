@@ -17,7 +17,17 @@ from pipeline import run_daily, runlog
 from pipeline.assemble import Caption, Shot
 from pipeline.config import Config
 from pipeline.run_daily import SYNTHETIC_REMINDER, UPLOAD_SHEET_NAME, main, run, upload_sheet
-from pipeline.runlog import DRY_RUN, FAILED, UPLOADED, RunRecord, append_run, notify, runs_path
+from pipeline.runlog import (
+    ALREADY_UPLOADED,
+    DRY_RUN,
+    FAILED,
+    UPLOADED,
+    RunRecord,
+    append_run,
+    notify,
+    runs_path,
+    uploaded_ids,
+)
 from pipeline.script_agent import CREDIT_BLOCK
 from pipeline.snippets import FIELDNAMES, csv_path
 from pipeline.tts import BlockAudio
@@ -447,3 +457,66 @@ def test_a_broken_webhook_does_not_raise(tmp_path, monkeypatch, caplog):
     notify([record()], cfg)
 
     assert "webhook failed" in caplog.text
+
+
+# --- re-upload guard -------------------------------------------------------
+
+
+def earlier(cfg, **overrides) -> None:
+    """Put a record from an earlier run in runs.jsonl."""
+    append_run(record(**({"date": TODAY.isoformat()} | overrides)), cfg)
+
+
+def test_a_format_already_uploaded_today_is_not_uploaded_again(cfg, fakes, caplog):
+    earlier(cfg, format="main", youtube_id="first_main")
+
+    with caplog.at_level("WARNING"):
+        records = run(TODAY, cfg)
+
+    assert fakes.uploads == [("punch.mp4", "unlisted")]
+    assert [(r.format, r.status, r.youtube_id) for r in records] == [
+        ("main", ALREADY_UPLOADED, "first_main"),
+        ("punch", UPLOADED, "yt_punch"),
+    ]
+    assert "main already uploaded on 2026-10-01 as first_main; skipping upload" in caplog.text
+
+
+def test_a_full_rerun_uploads_nothing_but_still_logs_and_marks(cfg, fakes):
+    earlier(cfg, format="main", youtube_id="first_main")
+    earlier(cfg, format="punch", youtube_id="first_punch")
+
+    records = run(TODAY, cfg)
+
+    assert fakes.uploads == []
+    assert {r.status for r in records} == {ALREADY_UPLOADED}
+    assert len(logged(cfg)) == 4
+    assert themes_file(cfg)["gravity"] == TODAY.isoformat()
+
+
+def test_the_guard_ignores_failed_records_and_other_days(cfg, fakes):
+    earlier(cfg, format="main", youtube_id=None, status=FAILED)
+    earlier(cfg, format="punch", date="2026-09-30", youtube_id="yesterday")
+
+    run(TODAY, cfg)
+
+    assert fakes.uploads == [("main.mp4", "unlisted"), ("punch.mp4", "unlisted")]
+
+
+def test_uploaded_ids_reads_only_that_day(tmp_path, caplog):
+    cfg = make_cfg(tmp_path)
+    append_run(record(format="main", youtube_id="a"), cfg)
+    append_run(record(format="punch", youtube_id=None, status=FAILED), cfg)
+    append_run(record(format="punch", date="2026-09-30", youtube_id="old"), cfg)
+    with runs_path(cfg).open("a", encoding="utf-8") as handle:
+        handle.write("{not json\n\n")
+    append_run(record(format="punch", youtube_id="b"), cfg)
+
+    with caplog.at_level("WARNING"):
+        found = uploaded_ids("2026-10-01", cfg)
+
+    assert found == {"main": "a", "punch": "b"}
+    assert "line 4 is not JSON" in caplog.text
+
+
+def test_uploaded_ids_without_a_log(tmp_path):
+    assert uploaded_ids("2026-10-01", make_cfg(tmp_path)) == {}
