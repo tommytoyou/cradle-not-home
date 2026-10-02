@@ -205,6 +205,13 @@ Order: library check, theme, package, then for main and punch: TTS, timeline, re
 ## T8. Tom cuts clips
 Not a Code ticket. Cut from `broll/SOURCE_LIST.md` with `cut_snippet.sh`, keeping the subject in the middle third of the frame (it gets center cropped to vertical). Then run `python -m pipeline.snippets scan`. Target 200 clips before T9.
 
+## T8a. Autocut and review page (DONE)
+`broll/autocut.py`, `broll/review_template.html`, `broll/apply_review.py`
+* `python -m broll.autocut`: for each new video in `broll/sources/`, PySceneDetect finds the cuts, scenes split into 4-12 s clips, and clips under 1080 px tall, near black or near static are dropped. The rest go to `library/_inbox/<nasa_id>_t<start>.mp4`, with a thumbnail and a 3 s preview in `_inbox/_review/`. `_inbox/candidates.json` keeps the exact `nasa_id` and which sources are done.
+* `library/_inbox/review.html`: keep/reject, target folder (`FOLDERS` minus `_inbox`), mood and `faces`/`logo` checkboxes, vertical crop guides. Exports `review_decisions.json`.
+* `python -m broll.apply_review <decisions.json>`: checks everything first, then moves kept clips to `<folder>/<name>__<tags>.mp4`, deletes rejects, and rescans with `nasa_id` and `credit` filled in. Undecided clips stay for the next review.
+* The scanner never indexes `_inbox`, so unreviewed clips cannot be picked.
+
 ## T9. Dry run
 Three days of `--dry-run`, then three days of real unlisted uploads. Tom checks: first 2 seconds grab, voice consistent, captions readable on a phone, no NASA endorsement implied.
 

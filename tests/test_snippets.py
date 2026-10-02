@@ -527,3 +527,32 @@ def test_scan_a_real_library(tmp_path):
     assert indexed["faces"] == "1"
     assert float(indexed["duration_sec"]) == pytest.approx(5.0, abs=0.1)
     assert indexed["height"] == "1080"
+
+
+# --- review inbox and provenance (T8a) --------------------------------------
+
+
+def test_scan_skips_the_review_inbox(tmp_path, good_probe):
+    cfg = make_cfg(tmp_path)
+    add_clip(cfg, "05_eva", "kept.mp4")
+    add_clip(cfg, "_inbox", "waiting.mp4")
+    add_clip(cfg, "_inbox/_review", "waiting.mp4")
+
+    assert scan_library(cfg) == 1
+    assert [r["path"] for r in read_index(cfg)] == ["05_eva/kept.mp4"]
+
+
+def test_scan_fills_blank_provenance_but_keeps_hand_edits(tmp_path, good_probe):
+    cfg = make_cfg(tmp_path)
+    add_clip(cfg, "05_eva", "new.mp4")
+    add_clip(cfg, "05_eva", "edited.mp4")
+    write_index(cfg, [row("05_eva/edited.mp4") | {"nasa_id": "hand", "credit": "by hand"}])
+
+    scan_library(cfg, {
+        "05_eva/new.mp4": ("jsc1", "NASA one"),
+        "05_eva/edited.mp4": ("jsc2", "NASA two"),
+    })
+
+    rows = {r["path"]: r for r in read_index(cfg)}
+    assert (rows["05_eva/new.mp4"]["nasa_id"], rows["05_eva/new.mp4"]["credit"]) == ("jsc1", "NASA one")
+    assert (rows["05_eva/edited.mp4"]["nasa_id"], rows["05_eva/edited.mp4"]["credit"]) == ("hand", "by hand")

@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clip review</title>
+<!-- Template for broll/autocut.py; it writes library/_inbox/review.html. -->
+<style>
+  :root {
+    --bg: #f4f4f2; --card: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #d9d9d4;
+    --keep: #1f7a4d; --keep-bg: #e3f3ea; --reject: #b3261e; --reject-bg: #f9e3e1;
+    --accent: #2b5fb4; --guide: rgba(255, 214, 10, .85);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161615; --card: #22221f; --ink: #ecece7; --muted: #9c9c95; --line: #3a3a36;
+      --keep: #5cc28d; --keep-bg: #1d3328; --reject: #f08079; --reject-bg: #3a1f1d;
+      --accent: #7aa7f0;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 12px;
+           align-items: center; padding: 10px 16px; background: var(--card);
+           border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0 8px 0 0; }
+  .counts { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .spacer { flex: 1; }
+  #message { color: var(--reject); }
+  button, select { font: inherit; color: var(--ink); background: var(--card);
+                   border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  main { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+         gap: 16px; padding: 16px; }
+  .empty { padding: 40px 16px; color: var(--muted); }
+  .card { background: var(--card); border: 2px solid var(--line); border-radius: 10px;
+          overflow: hidden; display: flex; flex-direction: column; }
+  .card.keep { border-color: var(--keep); }
+  .card.reject { border-color: var(--reject); opacity: .6; }
+  .card.error { box-shadow: 0 0 0 3px var(--reject); }
+  .frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
+  .frame video { width: 100%; height: 100%; object-fit: contain; display: block; }
+  /* The vertical render keeps the centre 9:16 slice: 31.6% of a 16:9 frame. */
+  .frame.guides::before, .frame.guides::after { content: ""; position: absolute; top: 0;
+           bottom: 0; width: 0; border-left: 1px dashed var(--guide); pointer-events: none; }
+  .frame.guides::before { left: 34.2%; }
+  .frame.guides::after { left: 65.8%; }
+  .body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .name { font-weight: 600; word-break: break-all; }
+  .meta { color: var(--muted); font-size: 12px; word-break: break-all; }
+  .meta a { color: inherit; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .decide button { flex: 1; }
+  .decide .on-keep { background: var(--keep-bg); border-color: var(--keep); color: var(--keep); font-weight: 600; }
+  .decide .on-reject { background: var(--reject-bg); border-color: var(--reject); color: var(--reject); font-weight: 600; }
+  .row select { flex: 1; min-width: 0; }
+  .defaults { color: var(--muted); font-size: 12px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; }
+  .tags label { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
+  .tags.flags { padding-top: 6px; border-top: 1px solid var(--line); font-weight: 600; }
+  @media (max-width: 420px) { main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Clip review</h1>
+  <span class="counts" id="counts"></span>
+  <label><input type="checkbox" id="guides" checked> vertical crop guides</label>
+  <select id="filter" aria-label="Show">
+    <option value="all">Show all</option>
+    <option value="undecided">Undecided</option>
+    <option value="keep">Kept</option>
+    <option value="reject">Rejected</option>
+  </select>
+  <span class="spacer"></span>
+  <span id="message" role="status"></span>
+  <button class="primary" id="export">Export decisions</button>
+</header>
+<main id="grid"></main>
+<script>
+const DATA = /*__DATA__*/null;
+const STORE_KEY = "cnh-review:" + location.pathname;
+const grid = document.getElementById("grid");
+const message = document.getElementById("message");
+
+function fresh(clip) {
+  return { decision: null, folder: clip.folder || "", moods: [], faces: false, logo: false };
+}
+
+function loadState() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") || {}; } catch (e) { saved = {}; }
+  const state = {};
+  for (const clip of DATA.clips) state[clip.name] = Object.assign(fresh(clip), saved[clip.name] || {});
+  return state;
+}
+const state = loadState();
+
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* private window */ }
+}
+
+function el(tag, attrs, children) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs || {})) {
+    if (key === "text") node.textContent = value;
+    else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+    else node.setAttribute(key, value);
+  }
+  for (const child of children || []) node.append(child);
+  return node;
+}
+
+function checkbox(label, checked, onchange) {
+  const box = el("input", { type: "checkbox", onchange: (e) => onchange(e.target.checked) });
+  box.checked = checked;
+  return el("label", {}, [box, label]);
+}
+
+function card(clip) {
+  const s = state[clip.name];
+  const video = el("video", {
+    muted: "", loop: "", playsinline: "", preload: "none",
+    poster: DATA.reviewDir + "/" + clip.stem + ".jpg",
+    src: DATA.reviewDir + "/" + clip.stem + ".mp4",
+  });
+  video.muted = true;
+  const frame = el("div", { class: "frame" }, [video]);
+  frame.addEventListener("mouseenter", () => video.play().catch(() => {}));
+  frame.addEventListener("mouseleave", () => video.pause());
+  frame.addEventListener("click", () => (video.paused ? video.play().catch(() => {}) : video.pause()));
+
+  const node = el("article", { class: "card", "data-name": clip.name });
+  const keep = el("button", { text: "Keep", onclick: () => decide("keep") });
+  const reject = el("button", { text: "Reject", onclick: () => decide("reject") });
+
+  const folder = el("select", { "aria-label": "Target folder", onchange: (e) => {
+    s.folder = e.target.value; refresh(); save();
+  } }, [el("option", { value: "", text: "Folder..." })]
+    .concat(DATA.folders.map((f) => el("option", { value: f, text: f }))));
+  folder.value = s.folder;
+  const defaults = el("div", { class: "defaults" });
+
+  const moods = el("div", { class: "tags" }, DATA.moods.map((m) => checkbox(m, s.moods.includes(m), (on) => {
+    s.moods = on ? s.moods.concat(m).sort() : s.moods.filter((x) => x !== m); save();
+  })));
+  const flags = el("div", { class: "tags flags" }, DATA.flags.map((f) => checkbox(f, s[f], (on) => {
+    s[f] = on; save();
+  })));
+
+  function decide(choice) {
+    s.decision = s.decision === choice ? null : choice;
+    refresh(); save(); counts();
+  }
+  function refresh() {
+    node.classList.toggle("keep", s.decision === "keep");
+    node.classList.toggle("reject", s.decision === "reject");
+    if (s.decision !== "keep" || s.folder) node.classList.remove("error");
+    keep.className = s.decision === "keep" ? "on-keep" : "";
+    reject.className = s.decision === "reject" ? "on-reject" : "";
+    const extra = DATA.folderMoods[s.folder] || [];
+    defaults.textContent = s.folder ? "Folder adds: " + (extra.join(", ") || "no moods") : "";
+  }
+
+  const span = clip.start.toFixed(1) + "-" + clip.end.toFixed(1) + " s";
+  const link = el("a", { href: "https://images.nasa.gov/details/" + encodeURIComponent(clip.nasa_id),
+                         target: "_blank", rel: "noopener", text: clip.nasa_id });
+  node.append(frame, el("div", { class: "body" }, [
+    el("div", { class: "name", text: clip.name }),
+    el("div", { class: "meta" }, [link, " | " + clip.source + " @ " + span + " (" + (clip.end - clip.start).toFixed(1) + " s)"]),
+    el("div", { class: "row decide" }, [keep, reject]),
+    el("div", { class: "row" }, [folder]),
+    defaults, moods, flags,
+  ]));
+  refresh();
+  return node;
+}
+
+function counts() {
+  const all = Object.values(state);
+  const kept = all.filter((s) => s.decision === "keep").length;
+  const rejected = all.filter((s) => s.decision === "reject").length;
+  document.getElementById("counts").textContent =
+    all.length + " clips: " + kept + " keep, " + rejected + " reject, " + (all.length - kept - rejected) + " undecided";
+  applyFilter();
+}
+
+function applyFilter() {
+  const show = document.getElementById("filter").value;
+  for (const node of grid.children) {
+    const s = state[node.dataset.name];
+    if (!s) continue;
+    const d = s.decision || "undecided";
+    node.hidden = !(show === "all" || show === d);
+  }
+}
+
+function exportDecisions() {
+  const missing = DATA.clips.filter((c) => state[c.name].decision === "keep" && !state[c.name].folder);
+  for (const node of grid.children) node.classList.toggle("error", missing.some((c) => c.name === node.dataset.name));
+  if (missing.length) {
+    message.textContent = missing.length + " kept clip(s) need a folder.";
+    grid.querySelector(".card.error").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  const clips = {};
+  for (const clip of DATA.clips) {
+    const s = state[clip.name];
+    if (!s.decision) continue;
+    clips[clip.name] = s.decision === "keep"
+      ? { decision: "keep", folder: s.folder, moods: s.moods.slice(), faces: s.faces, logo: s.logo }
+      : { decision: "reject" };
+  }
+  const body = JSON.stringify({ version: 1, exported: new Date().toISOString(), clips: clips }, null, 2);
+  const url = URL.createObjectURL(new Blob([body + "\n"], { type: "application/json" }));
+  const link = el("a", { href: url, download: DATA.decisionsName });
+  document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  message.textContent = "";
+}
+
+if (!DATA.clips.length) {
+  grid.append(el("p", { class: "empty", text: "Nothing to review. Run python -m broll.autocut after adding sources." }));
+} else {
+  for (const clip of DATA.clips) grid.append(card(clip));
+}
+document.getElementById("filter").addEventListener("change", applyFilter);
+document.getElementById("guides").addEventListener("change", (e) => {
+  for (const frame of document.querySelectorAll(".frame")) frame.classList.toggle("guides", e.target.checked);
+});
+for (const frame of document.querySelectorAll(".frame")) frame.classList.add("guides");
+document.getElementById("export").addEventListener("click", exportDecisions);
+counts();
+</script>
+</body>
+</html>

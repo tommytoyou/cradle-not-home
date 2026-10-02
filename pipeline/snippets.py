@@ -10,9 +10,11 @@ thin. Also the ``python -m pipeline.snippets scan`` entry point.
 CSV notes: ``path`` is library-relative with forward slashes and is the key used
 by ``used_today`` and :func:`mark_used`. ``moods`` is pipe-separated. ``nasa_id``
 and ``credit`` are left blank by the scanner for hand editing, and a rescan
-preserves them along with ``last_used``. ``faces`` and ``logo_risk`` are flags
+preserves them along with ``last_used``; ``broll/apply_review.py`` fills them
+for reviewed clips through ``provenance``. ``faces`` and ``logo_risk`` are flags
 (0/1) owned by the scanner, set from the reserved ``faces`` and ``logo``
-filename tags.
+filename tags. Top-level folders starting with ``_`` (the review inbox) are
+never indexed.
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 from functools import lru_cache
@@ -216,8 +219,13 @@ def load_snippets(cfg: Config) -> list[Snippet]:
 # --- scanning --------------------------------------------------------------
 
 
-def scan_library(cfg: Config) -> int:
-    """Index the library into the CSV; returns the number of accepted clips."""
+def scan_library(cfg: Config, provenance: Mapping[str, tuple[str, str]] | None = None) -> int:
+    """Index the library into the CSV; returns the number of accepted clips.
+
+    Top-level folders starting with ``_`` (the review ``_inbox``) are skipped.
+    ``provenance`` maps a library path to ``(nasa_id, credit)`` and fills those
+    columns where they are still blank; values already in the CSV win.
+    """
     library = Path(cfg.library_dir)
     if not library.is_dir():
         raise SnippetError(f"library directory not found: {library}")
@@ -232,6 +240,8 @@ def scan_library(cfg: Config) -> int:
             continue
 
         key = file.relative_to(library).as_posix()
+        if key.startswith("_"):
+            continue
         try:
             duration, width, height = probe_clip(file)
         except SnippetError as exc:
@@ -259,6 +269,7 @@ def scan_library(cfg: Config) -> int:
             log.warning("%s has no moods from its folder or filename", key)
 
         prior = preserved.get(key, {})
+        nasa_id, credit = (provenance or {}).get(key, ("", ""))
         rows.append(
             {
                 "path": key,
@@ -268,8 +279,8 @@ def scan_library(cfg: Config) -> int:
                 "width": str(width),
                 "height": str(height),
                 # Hand-edited columns survive a rescan.
-                "nasa_id": prior.get("nasa_id", ""),
-                "credit": prior.get("credit", ""),
+                "nasa_id": prior.get("nasa_id") or nasa_id,
+                "credit": prior.get("credit") or credit,
                 "faces": "1" if faces else "0",
                 "logo_risk": "1" if logo else "0",
                 "last_used": prior.get("last_used", ""),

@@ -8,3 +8,5 @@ google-auth-oauthlib
 python-dotenv
 pytest
 jsonschema
+scenedetect[opencv-headless]
+numpy
