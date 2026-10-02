@@ -66,9 +66,24 @@ class Config:
     notify_webhook_url: str | None = None
 
 
-def _resolve(value: str) -> Path:
+def resolve_path(value: str) -> Path:
     path = Path(value.strip()).expanduser()
     return path if path.is_absolute() else ROOT / path
+
+
+def read_env(
+    env_file: Path | None = None,
+    environ: Mapping[str, str] | None = None,
+) -> dict[str, str]:
+    """Raw ``.env`` values overlaid with the process environment, which wins."""
+    environ = os.environ if environ is None else environ
+    path = ROOT / ".env" if env_file is None else Path(env_file)
+
+    values: dict[str, str] = {}
+    if path.is_file():
+        values.update({k: v for k, v in dotenv_values(path).items() if v is not None})
+    values.update(environ)
+    return values
 
 
 def load_config(
@@ -80,13 +95,8 @@ def load_config(
     The real environment wins over the file. Both arguments exist so tests can
     run hermetically; production calls ``load_config()`` with neither.
     """
-    environ = os.environ if environ is None else environ
     path = ROOT / ".env" if env_file is None else Path(env_file)
-
-    values: dict[str, str] = {}
-    if path.is_file():
-        values.update({k: v for k, v in dotenv_values(path).items() if v is not None})
-    values.update(environ)
+    values = read_env(env_file, environ)
 
     def present(key: str) -> str | None:
         value = values.get(key, "")
@@ -108,7 +118,7 @@ def load_config(
         if value is None:
             missing.append(key)
         else:
-            kwargs[field] = _resolve(value)
+            kwargs[field] = resolve_path(value)
 
     defaults = {f.name: f.default for f in fields(Config)}
     for key, field in OPTIONAL_INTS.items():

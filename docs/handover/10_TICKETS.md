@@ -223,3 +223,14 @@ The machine is Windows with PowerShell. Use Task Scheduler, not cron:
 
 ## T11. Long form manual mode (later)
 Reuse `render()` at 1920x1080 with Tom's recorded narration as the voice file. Not ticketed yet.
+
+## T12. Doctor (DONE)
+`python -m pipeline.doctor` prints one `[PASS]`/`[FAIL]`/`[WARN]` line per check, with the fix, and exits 0 only when every required check passes:
+* `ffmpeg` and `ffprobe` on PATH.
+* Every required `.env` value set; optional integers are whole numbers.
+* `MUSIC_DIR` holds at least one track.
+* Usable clips (indexed, file present, not `logo_risk`) at least `MIN_LIBRARY_CLIPS`; also says how many wait in `_inbox` review.
+* `FONT_PATH` exists.
+* `YOUTUBE_TOKEN` exists: warning only while uploads are manual.
+* Task Scheduler job `Cradle Not Home daily` registered and enabled; reports dry run or LIVE. `--task-name` if it was installed under another name.
+Each check reads `.env` on its own, so one missing value does not hide the others.
