@@ -2,7 +2,7 @@
 
 The end-to-end tests cut a generated 1080p source with four scenes: moving test
 bars (6 s), black (5 s), moving HD bars (14 s) and flat grey (6 s). Expected:
-one clip, a near-black drop, two clips, a near-static drop.
+one clip, a near-black drop, two clips, one clip flagged static.
 """
 
 import json
@@ -160,16 +160,23 @@ def test_unreadable_when_too_few_frames():
 # --- end to end ------------------------------------------------------------
 
 
-def test_scenes_become_clips_and_bad_ones_are_dropped(cut):
+def test_scenes_become_clips_black_is_dropped_static_is_flagged(cut):
     library, made = cut
 
-    assert [c.name for c in made] == [
-        "jsc2024_eva-01_t00002.mp4", "jsc2024_eva-01_t00112.mp4", "jsc2024_eva-01_t00180.mp4",
+    assert [(c.name, c.static) for c in made] == [
+        ("jsc2024_eva-01_t00002.mp4", False),
+        ("jsc2024_eva-01_t00112.mp4", False),
+        ("jsc2024_eva-01_t00180.mp4", False),
+        ("jsc2024_eva-01_t00252.mp4", True),
     ]
     assert {c.nasa_id for c in made} == {NASA_ID}
     assert {c.folder for c in made} == {"05_eva"}
     manifest = load_manifest(library / INBOX)
-    assert manifest["sources"][SOURCE_NAME]["dropped"] == {"near black": 1, "near static": 1}
+    assert manifest["sources"][SOURCE_NAME]["dropped"] == {"near black": 1}
+    assert manifest["sources"][SOURCE_NAME]["static"] == 1
+    assert manifest["clips"]["jsc2024_eva-01_t00252.mp4"]["static"] is True
+    assert manifest["clips"]["jsc2024_eva-01_t00002.mp4"]["static"] is False
+    assert (library / INBOX / "jsc2024_eva-01_t00252.mp4").is_file()
 
 
 def test_clips_are_1080p_in_range_and_muted(cut):
@@ -215,6 +222,29 @@ def test_review_page_lists_clips_folders_moods_and_flags(cut):
     assert data["moods"] == sorted(MOODS)
     assert data["flags"] == ["faces", "logo"]
     assert data["folderMoods"]["05_eva"] == ["isolation", "work"]
+    assert [c["static"] for c in data["clips"]] == [False, False, False, True]
+
+
+def test_review_page_has_a_flagged_static_section():
+    text = autocut.TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    assert 'id="static-section" hidden' in text
+    assert "Flagged static" in text
+    assert "staticGrid.append(card(clip))" in text
+    # Static cards start undecided like every other card.
+    assert 'return { decision: null' in text
+
+
+def test_manifests_from_before_the_static_flag_still_load(tmp_path):
+    inbox = tmp_path / INBOX
+    inbox.mkdir()
+    (inbox / "old_t00000.mp4").write_bytes(b"")
+    autocut.save_manifest(inbox, {"sources": {}, "clips": {"old_t00000.mp4": {
+        "nasa_id": "old", "source": "s.mp4", "start": 0, "end": 5, "folder": ""}}})
+
+    [clip] = autocut.pending_clips(inbox, load_manifest(inbox))
+
+    assert clip.static is False
 
 
 def test_a_rerun_skips_sources_already_cut(cut, monkeypatch):

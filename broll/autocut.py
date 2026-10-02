@@ -1,11 +1,12 @@
 """Cut NASA source videos into review candidates (T8a).
 
 For each video in ``broll/sources/``: detect scene cuts with PySceneDetect,
-split every scene into 4-12 s clips, drop clips that are under 1080 px tall,
-near black or near static, and write the rest to ``<library>/_inbox/`` as muted
-H.264 named ``<nasa_id>_t<start in tenths of a second>.mp4``. Then write
-``_inbox/review.html`` (thumbnail, looping preview, keep/reject, folder, tags)
-for ``broll/apply_review.py``.
+split every scene into 4-12 s clips, drop clips that are under 1080 px tall or
+near black, and write the rest to ``<library>/_inbox/`` as muted H.264 named
+``<nasa_id>_t<start in tenths of a second>.mp4``. Near-static clips are kept
+but marked ``static`` in the manifest and listed in their own "Flagged static"
+section of the page. Then write ``_inbox/review.html`` (thumbnail, looping
+preview, keep/reject, folder, tags) for ``broll/apply_review.py``.
 
 ``_inbox/candidates.json`` remembers the exact ``nasa_id`` and source of every
 clip, and which sources are done, so a rerun only cuts new sources. Thumbnails
@@ -96,6 +97,7 @@ class Clip:
     start: float
     end: float
     folder: str  # suggested target, from the collector's file name; may be ""
+    static: bool = False  # near static: kept, but shown apart on the page
 
 
 # --- names -----------------------------------------------------------------
@@ -144,6 +146,9 @@ def split_scene(start: float, end: float) -> list[tuple[float, float]]:
 
 # --- frame checks ----------------------------------------------------------
 
+NEAR_BLACK = "near black"
+NEAR_STATIC = "near static"
+
 
 def _grey_samples(capture: cv2.VideoCapture, start: float, end: float) -> list[np.ndarray]:
     frames = []
@@ -164,10 +169,10 @@ def reject_reason(frames: list[np.ndarray]) -> str | None:
         return "unreadable"
     brightest = [float(np.percentile(frame, 99)) for frame in frames]
     if float(np.median(brightest)) < BLACK_P99:
-        return "near black"
+        return NEAR_BLACK
     motion = float(np.mean([np.mean(np.abs(b - a)) for a, b in zip(frames, frames[1:])]))
     if motion < STATIC_DIFF:
-        return "near static"
+        return NEAR_STATIC
     return None
 
 
@@ -264,7 +269,11 @@ def pending_clips(inbox: Path, manifest: dict) -> list[Clip]:
 
 
 def cut_source(source: Path, inbox: Path) -> tuple[list[Clip], dict[str, int]]:
-    """Write every good clip of ``source`` into ``inbox``; returns them and drop counts."""
+    """Write every usable clip of ``source`` into ``inbox``; returns them and drop counts.
+
+    Near-static clips are written too, flagged ``static``; every other reject is
+    dropped.
+    """
     folder, nasa_id = parse_source(source)
     dropped: dict[str, int] = {}
 
@@ -293,12 +302,15 @@ def cut_source(source: Path, inbox: Path) -> tuple[list[Clip], dict[str, int]]:
     try:
         for start, end in spans:
             reason = reject_reason(_grey_samples(capture, start, end))
-            if reason:
+            static = reason == NEAR_STATIC
+            if static:
+                log.info("flag %s %.1f-%.1f s: %s", source.name, start, end, reason)
+            elif reason:
                 log.info("drop %s %.1f-%.1f s: %s", source.name, start, end, reason)
                 drop(reason)
                 continue
             clip = Clip(clip_name(nasa_id, start), nasa_id, source.name,
-                        round(start, 3), round(end, 3), folder)
+                        round(start, 3), round(end, 3), folder, static)
             dest = inbox / clip.name
             cut_clip(source, start, end, dest)
             make_previews(dest, inbox / REVIEW_DIR)
@@ -335,11 +347,14 @@ def autocut(sources_dir: Path, library: Path, force: bool = False) -> list[Clip]
         for clip in clips:
             entry = {k: v for k, v in clip.__dict__.items() if k != "name"}
             manifest["clips"][clip.name] = entry
+        static = sum(clip.static for clip in clips)
         manifest["sources"][source.name] = {"nasa_id": parse_source(source)[1],
-                                            "clips": len(clips), "dropped": dropped}
+                                            "clips": len(clips), "static": static,
+                                            "dropped": dropped}
         # Saved per source so a crash halfway keeps the finished ones.
         save_manifest(inbox, manifest)
-        log.info("%s: %d clips, dropped %s", source.name, len(clips), dropped or "none")
+        log.info("%s: %d clips (%d flagged static), dropped %s",
+                 source.name, len(clips), static, dropped or "none")
         made.extend(clips)
 
     write_review_page(library)
@@ -364,7 +379,8 @@ def write_review_page(library: Path) -> Path:
         "flags": [FACES_TAG, LOGO_TAG],
         "clips": [
             {"name": c.name, "stem": Path(c.name).stem, "nasa_id": c.nasa_id,
-             "source": c.source, "start": c.start, "end": c.end, "folder": c.folder}
+             "source": c.source, "start": c.start, "end": c.end, "folder": c.folder,
+             "static": c.static}
             for c in clips
         ],
     }

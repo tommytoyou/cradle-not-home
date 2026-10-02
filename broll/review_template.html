@@ -32,8 +32,14 @@
                    border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; }
   button { cursor: pointer; }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  main { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-         gap: 16px; padding: 16px; }
+  main { padding: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+  #static-section { margin-top: 32px; padding-top: 16px; border-top: 2px dashed var(--line); }
+  #static-section h2 { font-size: 16px; margin: 0 0 4px; }
+  #static-section p { margin: 0 0 12px; color: var(--muted); }
+  .flag { display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+          letter-spacing: .04em; color: var(--muted); border: 1px solid var(--line);
+          border-radius: 4px; padding: 0 5px; margin-left: 6px; }
   .empty { padding: 40px 16px; color: var(--muted); }
   .card { background: var(--card); border: 2px solid var(--line); border-radius: 10px;
           overflow: hidden; display: flex; flex-direction: column; }
@@ -60,7 +66,7 @@
   .tags { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; }
   .tags label { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
   .tags.flags { padding-top: 6px; border-top: 1px solid var(--line); font-weight: 600; }
-  @media (max-width: 420px) { main { grid-template-columns: 1fr; } }
+  @media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -78,11 +84,20 @@
   <span id="message" role="status"></span>
   <button class="primary" id="export">Export decisions</button>
 </header>
-<main id="grid"></main>
+<main>
+  <div class="grid" id="grid"></div>
+  <section id="static-section" hidden>
+    <h2 id="static-title">Flagged static</h2>
+    <p>Little or no motion between frames. These start undecided, like the rest; keep one only if it works as a hold.</p>
+    <div class="grid" id="static-grid"></div>
+  </section>
+</main>
 <script>
 const DATA = /*__DATA__*/null;
 const STORE_KEY = "cnh-review:" + location.pathname;
 const grid = document.getElementById("grid");
+const staticGrid = document.getElementById("static-grid");
+const allCards = () => document.querySelectorAll(".card");
 const message = document.getElementById("message");
 
 function fresh(clip) {
@@ -168,7 +183,7 @@ function card(clip) {
   const link = el("a", { href: "https://images.nasa.gov/details/" + encodeURIComponent(clip.nasa_id),
                          target: "_blank", rel: "noopener", text: clip.nasa_id });
   node.append(frame, el("div", { class: "body" }, [
-    el("div", { class: "name", text: clip.name }),
+    el("div", { class: "name", text: clip.name }, clip.static ? [el("span", { class: "flag", text: "static" })] : []),
     el("div", { class: "meta" }, [link, " | " + clip.source + " @ " + span + " (" + (clip.end - clip.start).toFixed(1) + " s)"]),
     el("div", { class: "row decide" }, [keep, reject]),
     el("div", { class: "row" }, [folder]),
@@ -189,7 +204,7 @@ function counts() {
 
 function applyFilter() {
   const show = document.getElementById("filter").value;
-  for (const node of grid.children) {
+  for (const node of allCards()) {
     const s = state[node.dataset.name];
     if (!s) continue;
     const d = s.decision || "undecided";
@@ -199,10 +214,10 @@ function applyFilter() {
 
 function exportDecisions() {
   const missing = DATA.clips.filter((c) => state[c.name].decision === "keep" && !state[c.name].folder);
-  for (const node of grid.children) node.classList.toggle("error", missing.some((c) => c.name === node.dataset.name));
+  for (const node of allCards()) node.classList.toggle("error", missing.some((c) => c.name === node.dataset.name));
   if (missing.length) {
     message.textContent = missing.length + " kept clip(s) need a folder.";
-    grid.querySelector(".card.error").scrollIntoView({ behavior: "smooth", block: "center" });
+    document.querySelector(".card.error").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   const clips = {};
@@ -221,10 +236,16 @@ function exportDecisions() {
   message.textContent = "";
 }
 
+const moving = DATA.clips.filter((c) => !c.static);
+const still = DATA.clips.filter((c) => c.static);
 if (!DATA.clips.length) {
   grid.append(el("p", { class: "empty", text: "Nothing to review. Run python -m broll.autocut after adding sources." }));
-} else {
-  for (const clip of DATA.clips) grid.append(card(clip));
+}
+for (const clip of moving) grid.append(card(clip));
+for (const clip of still) staticGrid.append(card(clip));
+if (still.length) {
+  document.getElementById("static-section").hidden = false;
+  document.getElementById("static-title").textContent = "Flagged static (" + still.length + ")";
 }
 document.getElementById("filter").addEventListener("change", applyFilter);
 document.getElementById("guides").addEventListener("change", (e) => {

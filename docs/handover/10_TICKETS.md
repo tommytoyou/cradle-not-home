@@ -207,7 +207,7 @@ Not a Code ticket. Cut from `broll/SOURCE_LIST.md` with `cut_snippet.sh`, keepin
 
 ## T8a. Autocut and review page (DONE)
 `broll/autocut.py`, `broll/review_template.html`, `broll/apply_review.py`
-* `python -m broll.autocut`: for each new video in `broll/sources/`, PySceneDetect finds the cuts, scenes split into 4-12 s clips, and clips under 1080 px tall, near black or near static are dropped. The rest go to `library/_inbox/<nasa_id>_t<start>.mp4`, with a thumbnail and a 3 s preview in `_inbox/_review/`. `_inbox/candidates.json` keeps the exact `nasa_id` and which sources are done.
+* `python -m broll.autocut`: for each new video in `broll/sources/`, PySceneDetect finds the cuts, scenes split into 4-12 s clips, and clips under 1080 px tall or near black are dropped. Near-static clips are kept, marked `static` in `candidates.json`, and shown undecided in a "Flagged static" section at the bottom of the page. The rest go to `library/_inbox/<nasa_id>_t<start>.mp4`, with a thumbnail and a 3 s preview in `_inbox/_review/`. `_inbox/candidates.json` keeps the exact `nasa_id` and which sources are done.
 * `library/_inbox/review.html`: keep/reject, target folder (`FOLDERS` minus `_inbox`), mood and `faces`/`logo` checkboxes, vertical crop guides. Exports `review_decisions.json`.
 * `python -m broll.apply_review <decisions.json>`: checks everything first, then moves kept clips to `<folder>/<name>__<tags>.mp4`, deletes rejects, and rescans with `nasa_id` and `credit` filled in. Undecided clips stay for the next review.
 * The scanner never indexes `_inbox`, so unreviewed clips cannot be picked.
